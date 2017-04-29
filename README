@@ -1,0 +1,52 @@
+Instructions to student:  Examine main.c to see how to interact with
+the A/D cape.  Then clone main.c and put your own code in it for your
+project.
+
+Important note:  This stuff works on Debian 3.8.13-bone79.  No guarantees
+it will work on earlier or later Debian versions.  Therefore, I strongly
+recommend you flash your BBB with Debian 3.8.13 to use these programs.
+
+------------------------------------------------------------------
+The stuff in this directory is to build both ARM and PRU executables
+on the BBB itself.  The PRU code is written in C and built using
+the prucl compiler.  This stuff is stand-alone -- no CCS is needed.
+
+This stuff works as follows:
+
+main sends the following to the PRU in a vector:
+  flag saying new command has arrived
+  number of bytes
+  vector of bytes.
+
+The PRU sits in a loop, doing nothing.  When new data arrives, it
+bit-bangs clock and data lines to pump the data out two of the GPIOs.
+
+To run this stuff, run ./main.  Then follow instructions (hit return
+to step through various tests).
+
+--------------------------------------------------------------------
+This is version of 4.10.2017.  The following features/functionality are
+implemented:
+
+*  Communication with ADC
+*  ADC initialization via writing config regs on 7172.
+*  Read ADC ID reg.  Get correct result.
+*  Ability to do read of single reading in single reading mode.
+   This read takes place from user space, so the timing can be
+   jittery.  Call the fcn adc_read_single_01(); it will return
+   the measurement as a float.
+*  Ability to do read of buffer of values with timing determined
+   by the AD7172 itself.  This gives non-jittered sample times.
+   Call the fcn adc_read_multiple_01() and pass in a pointer 
+   to the buffer (of floats) to fill.
+*  Ability to change the sample rate.  The sample rate settings are
+   determined by the AD7172, and are documented in the AD7172 data
+   sheet.
+
+The PRU1 is also programmed, but communication with it is disabled.
+You can shut off the PRU1 by commenting out the stuff which sets
+the bit low in pru1.c (current active).
+Also, the bit in GPIOCON is set so the AD7172 will ignore the 
+signals on the SYNC_N pin.  (If the AD7172 pays attention, it will
+never communicate with the PRU0.)
+
