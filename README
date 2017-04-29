@@ -1,3 +1,33 @@
+This directory holds code which you can build and run on a Beaglebone
+Black.  It interfaces to an ADC-001 A/D cape, which is a 2-channel
+A/D board designed for data acquisition in the audio range (50Hz --
+15kHz).  Complete documentation for the ADC-001 cape is available
+under: 
+
+https://github.com/brorson/ADC-001_hardware_information
+
+The ADC-001 cape will be available for purchase in the near future.
+
+The code in this directory includes a driver for the ADC-001 cape and a
+main program demonstrating how to take data using the ADC-001. The A/D
+on the cape communicates with the main processor via a SPI-like
+protocol.  The A/D itself is an Analog Devices AD7172.  The
+bit-banging code to talk to the A/D is implemented in C on 
+the PRU.  The PRUSS subsystem is used for communication between
+the ARM and the PRU.  The files in this directory show how to write C
+code for the  PRU. There is also a Makefile in this directory which
+builds the whole project.  The project is meant to be built on the
+Beaglebone itself.  I have not tested cross-compiling this code (yet).
+
+Finally, I provide a device tree overlay for the ADC-001,
+SDB-PRU-ADC.dts.  This must be loaded on your Beaglebone in the usual
+way to use the cape.
+
+Stuart Brorson
+4.29.2017
+sdb@cloud9.net
+
+-------------------------------------------------------------------
 Instructions to student:  Examine main.c to see how to interact with
 the A/D cape.  Then clone main.c and put your own code in it for your
 project.
@@ -11,7 +41,7 @@ The stuff in this directory is to build both ARM and PRU executables
 on the BBB itself.  The PRU code is written in C and built using
 the prucl compiler.  This stuff is stand-alone -- no CCS is needed.
 
-This stuff works as follows:
+The ARM to PRU communication works as follows:
 
 main sends the following to the PRU in a vector:
   flag saying new command has arrived
@@ -21,7 +51,9 @@ main sends the following to the PRU in a vector:
 The PRU sits in a loop, doing nothing.  When new data arrives, it
 bit-bangs clock and data lines to pump the data out two of the GPIOs.
 
-To run this stuff, run ./main.  Then follow instructions (hit return
+To build the code, type "make clean && make".
+
+To run the program, run ./main.  Then follow instructions (hit return
 to step through various tests).
 
 --------------------------------------------------------------------
