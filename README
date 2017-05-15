@@ -39,7 +39,7 @@ recommend you flash your BBB with Debian 3.8.13 to use these programs.
 ------------------------------------------------------------------
 The stuff in this directory is to build both ARM and PRU executables
 on the BBB itself.  The PRU code is written in C and built using
-the prucl compiler.  This stuff is stand-alone -- no CCS is needed.
+the clpru compiler.  This stuff is stand-alone -- no CCS is needed.
 
 The ARM to PRU communication works as follows:
 
