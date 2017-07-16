@@ -39,7 +39,7 @@ PRU1_EXES := data1.bin text1.bin
 PRU_HEXPRU_SCRIPT := bin.cmd
 
 #=================================================
-all: main pru0.bin pru1.bin SDB-PRU-ADC-00A0.dtbo
+all: main pru0.bin pru1.bin ADC_001-00A0.dtbo
 
 bins: main pru0.bin
 
@@ -94,9 +94,9 @@ pru1.bin: pru1.out $(PRU_HEXPRU_SCRIPT)
 
 #--------------------------------
 # Build and install device tree overlay
-SDB-PRU-ADC-00A0.dtbo: SDB-PRU-ADC.dts
-	dtc -O dtb -o SDB-PRU-ADC-00A0.dtbo -b 0 -@ SDB-PRU-ADC.dts
-	cp SDB-PRU-ADC-00A0.dtbo /lib/firmware
+ADC_001-00A0.dtbo: ADC_001.dts
+	dtc -O dtb -o ADC_001-00A0.dtbo -b 0 -@ ADC_001.dts
+	cp ADC_001-00A0.dtbo /lib/firmware
 
 #-------------------------------
 # Clean up directory -- remove executables and intermediate files.

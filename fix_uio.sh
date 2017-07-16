@@ -24,7 +24,7 @@ echo -n "Installing uio_pruss module ."
 /sbin/modprobe uio_pruss
 progress_and_delay
 
-echo SDB-PRU-ADC > /sys/devices/bone_capemgr.9/slots 
+echo ADC_001 > /sys/devices/bone_capemgr.9/slots 
 
 rmmod uio_pruss
 progress_and_delay
@@ -32,7 +32,7 @@ progress_and_delay
 /sbin/modprobe uio_pruss
 progress_and_delay
 
-echo SDB-PRU-ADC > /sys/devices/bone_capemgr.9/slots 
+echo ADC_001 > /sys/devices/bone_capemgr.9/slots 
 
 rmmod uio_pruss
 progress_and_delay
