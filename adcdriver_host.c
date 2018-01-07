@@ -23,6 +23,7 @@
 #include <prussdrv.h>
 #include <pruss_intc_mapping.h>
 
+#include "spidriver_host.h"
 #include "adcdriver_host.h"
 
 #define SPI_PRU	0
@@ -104,7 +105,7 @@ void adc_config(void) {
   tx_buf[0] = WRITE_CH0_REG;
   tx_buf[1] = 0x80; // 0x80;
   tx_buf[2] = 0x01; // 0x01;
-  retval |= spi_write_cmd(&tx_buf, 3);
+  retval |= spi_write_cmd(tx_buf, 3);
 
   usleep(5);
 
@@ -116,7 +117,7 @@ void adc_config(void) {
   tx_buf[0] = WRITE_CH1_REG;
   tx_buf[1] = 0x00;
   tx_buf[2] = 0x43;
-  retval |= spi_write_cmd(&tx_buf, 3);
+  retval |= spi_write_cmd(tx_buf, 3);
 
   usleep(5);
 
@@ -126,7 +127,7 @@ void adc_config(void) {
   tx_buf[0] = WRITE_SETUPCON0_REG;
   tx_buf[1] = 0x13;
   tx_buf[2] = 0x00;
-  retval |= spi_write_cmd(&tx_buf, 3);
+  retval |= spi_write_cmd(tx_buf, 3);
 
   usleep(5);
 
@@ -135,7 +136,7 @@ void adc_config(void) {
   tx_buf[0] = WRITE_ADCMODE_REG;
   tx_buf[1] = 0x00;
   tx_buf[2] = 0x0c;  
-  //retval |= spi_write_cmd(&tx_buf, 3);
+  //retval |= spi_write_cmd(tx_buf, 3);
 
   usleep(5);
 
@@ -145,7 +146,7 @@ void adc_config(void) {
   tx_buf[0] = WRITE_IFMODE_REG;
   tx_buf[1] = 0x00;
   tx_buf[2] = 0x00;
-  retval |= spi_write_cmd(&tx_buf, 3);
+  retval |= spi_write_cmd(tx_buf, 3);
 
   usleep(5);
 
@@ -155,7 +156,7 @@ void adc_config(void) {
   tx_buf[0] = WRITE_GPIOCON_REG;
   tx_buf[1] = 0x00;  // Turn off SYNC_N feature
   tx_buf[2] = 0x00;
-  retval |= spi_write_cmd(&tx_buf, 3);
+  retval |= spi_write_cmd(tx_buf, 3);
 
   return;  // retval;
 }
@@ -193,13 +194,13 @@ void adc_set_chan0(void) {
   tx_buf[0] = WRITE_CH1_REG;
   tx_buf[1] = 0x00;
   tx_buf[2] = 0x43;
-  spi_write_cmd(&tx_buf, 3);
+  spi_write_cmd(tx_buf, 3);
 
   // Now enable chan0 reg.
   tx_buf[0] = WRITE_CH0_REG;
   tx_buf[1] = 0x80; // 0x80;
   tx_buf[2] = 0x01; // 0x01;
-  spi_write_cmd(&tx_buf, 3);
+  spi_write_cmd(tx_buf, 3);
 }
 
 
@@ -211,13 +212,13 @@ void adc_set_chan1(void) {
   tx_buf[0] = WRITE_CH0_REG;
   tx_buf[1] = 0x00;
   tx_buf[2] = 0x01;
-  spi_write_cmd(&tx_buf, 3);
+  spi_write_cmd(tx_buf, 3);
   
   // Now enable chan1 reg.
   tx_buf[0] = WRITE_CH1_REG;
   tx_buf[1] = 0x80; // 0x80;
   tx_buf[2] = 0x43; // 0x01;
-  spi_write_cmd(&tx_buf, 3);
+  spi_write_cmd(tx_buf, 3);
 } 
 
 
@@ -235,7 +236,7 @@ void adc_set_samplerate(int rate) {
   tx_buf[1] = 0x00;
   tx_buf[2] = 0x1f & rate;
   tx_buf[2] = tx_buf[2] | 0x60;
-  spi_write_cmd(&tx_buf, 3);
+  spi_write_cmd(tx_buf, 3);
 }
 
 
@@ -259,12 +260,12 @@ float adc_read_single(void) {
   tx_buf[0] = WRITE_ADCMODE_REG;
   tx_buf[1] = 0x00;
   tx_buf[2] = 0x1c;
-  spi_write_cmd(&tx_buf, 3);
+  spi_write_cmd(tx_buf, 3);
 
 
   // Now do read
   tx_buf[0] = READ_DATA_REG;
-  spi_writeread_single(&tx_buf, 1, &rx_buf, 3);
+  spi_writeread_single(tx_buf, 1, &rx_buf, 3);
 
   // Now convert to float and return
   volts = adc_GetVoltage(rx_buf);
@@ -294,10 +295,10 @@ void adc_read_multiple(uint32_t read_cnt, float *volts) {
   tx_buf[0] = WRITE_ADCMODE_REG;
   tx_buf[1] = 0x00;
   tx_buf[2] = 0x0c;
-  spi_write_cmd(&tx_buf, 3);
+  spi_write_cmd(tx_buf, 3);
 
   tx_buf[0] = READ_DATA_REG;
-  spi_writeread_continuous(&tx_buf, 1, rx_buf, 3, read_cnt);  
+  spi_writeread_continuous(tx_buf, 1, rx_buf, 3, read_cnt);  
 
   // Now convert readings to float and return
   for (i=0; i<read_cnt; i++) {

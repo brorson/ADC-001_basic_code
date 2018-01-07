@@ -30,7 +30,7 @@ uint32_t pru_test_ram(uint32_t offset, uint32_t value);
 uint32_t pru_test_communication(void);
 
 // High level fcns.  Call these from external files.
-void spi_write_cmd(uint32_t *data, int byte_cnt);
+uint32_t spi_write_cmd(uint32_t *data, int byte_cnt);
 uint8_t spi_writeread_single(uint32_t *txdata, int txcnt, uint32_t *rxdata, int rxcnt);
 uint8_t spi_writeread_continuous(uint32_t *txdata, int txcnt, uint32_t *rxdata, int rxcnt, int ncnv);
 

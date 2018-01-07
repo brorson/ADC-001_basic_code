@@ -5,6 +5,7 @@
 #include <signal.h>
 #include <string.h>
 #include <math.h>
+#include <unistd.h>
 
 #include "spidriver_host.h"
 #include "adcdriver_host.h"

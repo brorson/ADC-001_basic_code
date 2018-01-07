@@ -7,8 +7,8 @@
 #----------------------------------------------------
 # ARM code
 CC := gcc
-CFLAGS := -O3 -mfpu=vfpv3 -mfloat-abi=hard -march=armv7 -I./include
-LDFLAGS := -lprussdrv
+CFLAGS := -O3 -mfpu=vfpv3 -mfloat-abi=hard -march=armv7 -I./include 
+# LDFLAGS := -lprussdrv
 
 SRCS := main.c prussdrv.c adcdriver_host.c spidriver_host.c
 OBJS := main.o prussdrv.o adcdriver_host.o spidriver_host.o

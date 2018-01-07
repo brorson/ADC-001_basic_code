@@ -10,6 +10,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <sys/mman.h>
+#include <unistd.h>
 
 #include <prussdrv.h>
 #include <pruss_intc_mapping.h>
@@ -230,10 +231,12 @@ uint32_t pru_test_communication(void) {
 //===============================================================
 // These are high-level fcns which perform a command or a conversion read.
 //--------------------------------------------------------------
-void spi_write_cmd(uint32_t *data, int word_cnt) {
+uint32_t spi_write_cmd(uint32_t *data, int word_cnt) {
   // Pass a word count and a pointer to the data, send command to
   // PRU0 (SPI master) to pass on to A/D.
   // Max word count is 3 -- corresponding to max write len to AD7172.
+
+  uint32_t retval = 0;
 
   /* Command message structure is:
   uint32_t flag -- specifying what command to do
@@ -277,6 +280,7 @@ void spi_write_cmd(uint32_t *data, int word_cnt) {
   }
  
   // printf("In spi_write_cmd, at end of waiting, i = %d, tmp = %d\n", i, tmp);
+  return retval;
 
 }
 
