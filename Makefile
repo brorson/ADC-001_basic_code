@@ -20,7 +20,7 @@ INCLUDES := $(addprefix $(INCLUDEDIR)/, prussdrv.h pru_types.h __prussdrv.h prus
 # PRU code
 DEVICE=am335x
 PRU_CC := clpru
-PRU_CC_FLAGS := --silicon_version=3 -I./include -I/usr/include/arm-linux-gnueabihf -D$(DEVICE)
+PRU_CC_FLAGS := --silicon_version=3 -I./include -I/usr/share/ti/cgt-pru/include/ -D$(DEVICE) -i/usr/share/ti/cgt-pru/lib
 PRU_LINKER_SCRIPT := AM335x_PRU.cmd
 PRU_INCLUDES := resource_table_empty.h pru_ctrl.h pru_intc.h pru_cfg.h pru_spi.h
 
@@ -96,7 +96,7 @@ pru1.bin: pru1.out $(PRU_HEXPRU_SCRIPT)
 # Build and install device tree overlay
 ADC_001-00A0.dtbo: ADC_001.dts
 	dtc -O dtb -o ADC_001-00A0.dtbo -b 0 -@ ADC_001.dts
-	cp ADC_001-00A0.dtbo /lib/firmware
+	sudo cp ADC_001-00A0.dtbo /lib/firmware
 
 #-------------------------------
 # Clean up directory -- remove executables and intermediate files.
