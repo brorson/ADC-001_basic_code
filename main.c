@@ -89,11 +89,11 @@ int main (void)
 
   // Set sample rate to 32kSPS
   printf("--------------------------------------------------\n");
-  printf("Set sample rate to 32kSPS and set channel 1\n");
+  printf("Set sample rate to 32kSPS and set channel 0\n");
   printf("Hit return when ready -->\n");
   fgets (dummy, 8, stdin);
   adc_set_samplerate(SAMP_RATE_31250);
-  adc_set_chan1();
+  adc_set_chan0();
 
 
   // Now to multiple read, print out returned buffer and save to file
