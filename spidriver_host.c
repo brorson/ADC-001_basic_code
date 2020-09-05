@@ -152,6 +152,51 @@ uint32_t pru_read_word(uint32_t offset) {
 }
 
 //--------------------------------------------------------------
+void pru_read_block(uint32_t offset, uint32_t count, uint32_t *buffer) {
+    // Copy a whole block of words at once, using memcpy.
+    //
+    // This function syncs and copies count uint32_t words of PRU0 
+    // data memory starting at offset to buffer.
+    // Parameters:
+    //     offset is the offset into PRU0's dataram
+    //     count  is the number of uint32_t words to copy
+    //     buffer is a pointer to (at least) count uint32_t words
+    // Returns void
+    // Robert Heller <heller@deepsoft.com>
+    
+    uint32_t *mem_ptr;
+    uint32_t *mem_ptr_32; 
+    const uint32_t ram_offset = RAMOFFSET;
+    
+    mem_ptr = pru0_dataram;
+    mem_ptr_32 = mem_ptr + ram_offset + offset;
+    msync(mem_ptr_32, count * sizeof(uint32_t), MS_SYNC);
+    memcpy(buffer,mem_ptr_32,count * sizeof(uint32_t));
+}
+
+//--------------------------------------------------------------
+void pru_clear_block(uint32_t offset, uint32_t count) {
+    // Clear a whole block of words at once, using memset.
+    //
+    // This function syncs and clears count uint32_t words of PRU0 
+    // data memory starting at offset.
+    // Parameters:
+    //    offset is the offset into PRU0's dataram
+    //    count  is the number of uint32_t words to clear
+    // Returns void
+    // Robert Heller <heller@deepsoft.com>
+    
+    uint32_t *mem_ptr;
+    uint32_t *mem_ptr_32;
+    const uint32_t ram_offset = RAMOFFSET;
+    
+    mem_ptr = pru0_dataram;
+    mem_ptr_32 = mem_ptr + ram_offset + offset;
+    memset(mem_ptr_32,0,count*sizeof(uint32_t));
+    msync(mem_ptr_32,count*sizeof(uint32_t), MS_SYNC);
+}
+
+//--------------------------------------------------------------
 void pru_write_word(uint32_t offset, uint32_t value) {
   uint32_t *mem_ptr;
   uint32_t *mem_ptr_32;
@@ -393,9 +438,10 @@ uint8_t spi_writeread_continuous(uint32_t *txdata, int txcnt, uint32_t *rxdata, 
   pru_write_word(memptr++, rxcnt);  // Number of bytes in one conversion value
   pru_write_word(memptr++, ncnv);   // Total number of conversions requested
   rxptr = memptr;                   // This points to begin of rx data.
-  for (i = 0; i < ncnv; i++) {
-    pru_write_word(memptr++, 0x00);
-  }
+  pru_clear_block(memptr,ncnv);   // Fast clear block
+  //for (i = 0; i < ncnv; i++) {
+  //  pru_write_word(memptr++, 0x00);
+  //}
 
   // Now send the instruction flag.
   pru_write_word(0, SPI_WRITEREAD_CONTINUOUS);
@@ -421,10 +467,11 @@ uint8_t spi_writeread_continuous(uint32_t *txdata, int txcnt, uint32_t *rxdata, 
 
   // At end of transaction, the received data should be placed into
   // rx_data.
-  for (i = 0; i < ncnv; i++) {    
-    rxdata[i] = pru_read_word(rxptr+i);
-    // printf("   Rx word %d = 0x%08x\n", i, rxdata[i]);
-  } 
+  pru_read_block(rxptr,ncnv,rxdata); // Fast copy block  
+  //for (i = 0; i < ncnv; i++) {    
+  //  rxdata[i] = pru_read_word(rxptr+i);
+  //  // printf("   Rx word %d = 0x%08x\n", i, rxdata[i]);
+  //} 
 
   // May want to return number of received words here
   return ncnv;
