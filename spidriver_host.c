@@ -437,8 +437,9 @@ uint8_t spi_writeread_continuous(uint32_t *txdata, int txcnt, uint32_t *rxdata, 
   // Set up receive buffer
   pru_write_word(memptr++, rxcnt);  // Number of bytes in one conversion value
   pru_write_word(memptr++, ncnv);   // Total number of conversions requested
-  rxptr = memptr;                   // This points to begin of rx data.
-  pru_clear_block(memptr,ncnv);   // Fast clear block
+  rxptr = memptr+1;                 // This points to begin of rx data.
+  pru_write_word(memptr++,rxptr);   // Send receive buffer pointer RPH
+  pru_clear_block(rxptr,ncnv);   // Fast clear block
   //for (i = 0; i < ncnv; i++) {
   //  pru_write_word(memptr++, 0x00);
   //}
@@ -464,6 +465,172 @@ uint8_t spi_writeread_continuous(uint32_t *txdata, int txcnt, uint32_t *rxdata, 
  
   // printf("After waiting for SPI_WRITEREAD_CONTINUOUS, i = %d, tmp = 0x%02x\n", i, tmp);
 
+
+  // At end of transaction, the received data should be placed into
+  // rx_data.
+  pru_read_block(rxptr,ncnv,rxdata); // Fast copy block  
+  //for (i = 0; i < ncnv; i++) {    
+  //  rxdata[i] = pru_read_word(rxptr+i);
+  //  // printf("   Rx word %d = 0x%08x\n", i, rxdata[i]);
+  //} 
+
+  // May want to return number of received words here
+  return ncnv;
+}
+
+//---------------------------------------------------------------------------
+// These functions break spi_writeread_continuous (above) into
+// separate functions, separating the phases to allow for double 
+// buffering
+//---
+// First, a function to start a block transfer from the ADC
+//
+uint32_t  spi_writeread_continuous_start(uint32_t *txdata, int txcnt, uint32_t rxoffset, int rxcnt, int ncnv) {
+  // The only difference between this fcn and writeread_single is 
+  // that this fcn invokes the SPI_WRITEREAD_CONTINUOUS method
+  // on the PRU.
+
+  /* Command message structure is:
+  uint32_t flag -- specifying what command to do
+  uint32_t tx_byte_count
+  uint32_t tx_data[<tx_byte_count>]
+  uint32_t rx_byte_count
+  uint32_t rx_data[<rx_byte_count>]
+  */
+
+  uint32_t i;
+  volatile int tmp;
+  uint32_t memptr = 0x00;
+  uint32_t rxptr;
+  uint32_t N;
+
+  // printf("--> In spi_writeread_continuous, writing %d bytes\n", txcnt);
+
+  // Set up transmitted data
+  pru_write_word(memptr++, 0xff);      // Put PRU in "Wait for command" mode
+  pru_write_word(memptr++, txcnt);     // Number of tx bytes to send.
+  for (i = 0; i < txcnt; i++) {
+    pru_write_word(memptr++, txdata[i]);
+    // printf("   Tx word %d = 0x%08x\n", i, txdata[i]);
+  }
+
+  // Set up receive buffer
+  pru_write_word(memptr++, rxcnt);  // Number of bytes in one conversion value
+  pru_write_word(memptr++, ncnv);   // Total number of conversions requested
+  rxptr = memptr+1+rxoffset;                 // This points to begin of rx data.
+  pru_write_word(memptr++,rxptr);   // Send receive buffer pointer RPH
+  pru_clear_block(rxptr,ncnv);   // Fast clear block
+  //for (i = 0; i < ncnv; i++) {
+  //  pru_write_word(memptr++, 0x00);
+  //}
+
+  // Now send the instruction flag.
+  pru_write_word(0, SPI_WRITEREAD_CONTINUOUS);
+    
+  return rxptr;
+}
+
+//---
+// Second, a function to start a block transfer from the ADC, after 
+// waiting for a previous transfer to complete
+//
+uint32_t spi_writeread_continuous_waitstart(uint32_t *txdata, int txcnt, uint32_t rxoffset, int rxcnt, int ncnv) {
+  // The only difference between this fcn and writeread_single is 
+  // that this fcn invokes the SPI_WRITEREAD_CONTINUOUS method
+  // on the PRU.
+
+  /* Command message structure is:
+  uint32_t flag -- specifying what command to do
+  uint32_t tx_byte_count
+  uint32_t tx_data[<tx_byte_count>]
+  uint32_t rx_byte_count
+  uint32_t rx_data[<rx_byte_count>]
+  */
+
+  uint32_t i;
+  volatile int tmp;
+  uint32_t memptr = 0x00;
+  uint32_t rxptr;
+  uint32_t N;
+
+
+  // Wait for transaction to complete.
+  N = 10000000;
+  for (i=0; i<N; i++) {
+    tmp = pru_read_word(0x00);
+    // printf("In spi_writeread_continuous, tmp = 0x%08x\n", tmp);
+    if (!(tmp)) {
+      break;
+    }
+  }
+  if (i == N) {
+    printf("In spi_writeread_continuous, timed out waiting for end of transaction!\n");
+    pru_reset(PRU0);
+    prussdrv_exit();
+    exit(-1); 
+  } 
+ 
+  // printf("--> In spi_writeread_continuous, writing %d bytes\n", txcnt);
+
+  // Set up transmitted data
+  pru_write_word(memptr++, 0xff);      // Put PRU in "Wait for command" mode
+  pru_write_word(memptr++, txcnt);     // Number of tx bytes to send.
+  for (i = 0; i < txcnt; i++) {
+    pru_write_word(memptr++, txdata[i]);
+    // printf("   Tx word %d = 0x%08x\n", i, txdata[i]);
+  }
+
+  // Set up receive buffer
+  pru_write_word(memptr++, rxcnt);  // Number of bytes in one conversion value
+  pru_write_word(memptr++, ncnv);   // Total number of conversions requested
+  rxptr = memptr+1+rxoffset;                 // This points to begin of rx data.
+  pru_write_word(memptr++,rxptr);   // Send receive buffer pointer RPH
+  pru_clear_block(rxptr,ncnv);   // Fast clear block
+  //for (i = 0; i < ncnv; i++) {
+  //  pru_write_word(memptr++, 0x00);
+  //}
+
+  // Now send the instruction flag.
+  pru_write_word(0, SPI_WRITEREAD_CONTINUOUS);
+    
+  return rxptr;
+}
+
+//---
+// Now just the wait
+
+void spi_writeread_continuous_wait() {
+    
+  uint32_t i;
+  volatile int tmp;
+  uint32_t memptr = 0x00;
+  uint32_t rxptr;
+  uint32_t N; 
+    
+  // Wait for transaction to complete.
+  N = 10000000;
+  for (i=0; i<N; i++) {
+    tmp = pru_read_word(0x00);
+    // printf("In spi_writeread_continuous, tmp = 0x%08x\n", tmp);
+    if (!(tmp)) {
+      break;
+    }
+  }
+  if (i == N) {
+    printf("In spi_writeread_continuous, timed out waiting for end of transaction!\n");
+    pru_reset(PRU0);
+    prussdrv_exit();
+    exit(-1); 
+  } 
+ 
+  // printf("After waiting for SPI_WRITEREAD_CONTINUOUS, i = %d, tmp = 0x%02x\n", i, tmp);
+    
+}
+
+//---
+// Finally the transfer function
+//
+uint8_t spi_writeread_continuous_transfer(uint32_t rxptr,int ncnv, uint32_t *rxdata) {
 
   // At end of transaction, the received data should be placed into
   // rx_data.

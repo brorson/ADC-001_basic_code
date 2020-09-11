@@ -8,7 +8,7 @@
 //  Author        : $Author$
 //  Created By    : Robert Heller
 //  Created       : Sat Sep 5 14:26:26 2020
-//  Last Modified : <200905.1711>
+//  Last Modified : <200906.1004>
 //
 //  Description	
 //
@@ -50,7 +50,7 @@
  */
 
 #define SPIBUFFERSIZE 1024 // Low-level SPI buffer
-#define RINGBUFFERSIZE 8192 // High-level ring buffer
+#define RINGBUFFERSIZE (8*SPIBUFFERSIZE) // High-level ring buffer
 
 
 /** ADC_Stream, a class to encapsulate streaming data from the ADC 
@@ -157,10 +157,6 @@ private:
      * is returned starting from this index.
      */
     int outpointer_;
-    /** The SPI buffer.  This is the smaller buffer of raw (uint32s)
-     * samples from the ADC copied directly from the PRU's data RAM.
-     */
-    uint32_t SPIBuffer_[SPIBUFFERSIZE];
     /** Mutex for the high-level Ring buffer. */
     pthread_mutex_t highmutex_;
     /** End flag. When true, streaming is stopped. */

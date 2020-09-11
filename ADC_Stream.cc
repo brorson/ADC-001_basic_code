@@ -8,7 +8,7 @@
 //  Author        : $Author$
 //  Created By    : Robert Heller
 //  Created       : Sat Sep 5 15:17:04 2020
-//  Last Modified : <200905.1714>
+//  Last Modified : <200908.0956>
 //
 //  Description	
 //
@@ -168,47 +168,53 @@ uint32_t ADC_Stream::GetData(uint32_t offset, uint32_t count,
 /** Data aquistation thread implementation */
 void * ADC_Stream::thread_()
 {
+    // command buffer
+    uint32_t tx_buf[3];
+    int i, j;
+    uint32_t prev_rxptr, curr_rxptr;
+    uint32_t current_offset;
+    
+    // Set up ADC mode reg for continuous conversation
+    
+    // Write mode register
+    //printf("WRITE_ADCMODE_REG\n");
+    tx_buf[0] = WRITE_ADCMODE_REG;
+    tx_buf[1] = 0x00;
+    tx_buf[2] = 0x0c;
+    spi_write_cmd(tx_buf, 3);
+    
+    // Read samples from data register to buffer
+    tx_buf[0] = READ_DATA_REG;
+    // Initialize by filling the buffer at offset 0.
+    prev_rxptr = spi_writeread_continuous_start(tx_buf, 1, 0, 3, 
+                                                SPIBUFFERSIZE);
+    // Then we will fill the buffer at SPIBUFFERSIZE offset
+    current_offset = SPIBUFFERSIZE;
     // Loop until end
     while (!end_) {
-        // command buffer
-        uint32_t tx_buf[3];
-        int i, j;
-        
-        // Set up ADC mode reg for continuous conversation
-        
-        // Write mode register
-        //printf("WRITE_ADCMODE_REG\n");
-        tx_buf[0] = WRITE_ADCMODE_REG;
-        tx_buf[1] = 0x00;
-        tx_buf[2] = 0x0c;
-        spi_write_cmd(tx_buf, 3);
-        
-        // Read samples from data register to buffer
-        tx_buf[0] = READ_DATA_REG;
-        spi_writeread_continuous(tx_buf, 1, SPIBuffer_, 3, 
-                                 SPIBUFFERSIZE);
-        
+        // Wait for the previous buffer to fill, then start filling
+        // the other buffer.
+        curr_rxptr = spi_writeread_continuous_waitstart(tx_buf, 1,
+                                                        current_offset,
+                                                        3, 
+                                                        SPIBUFFERSIZE);
+        // Copy the previous buffer to the ring.
+        spi_writeread_continuous_transfer(prev_rxptr, SPIBUFFERSIZE,
+                                          &RingBuffer_[inpointer_]);
         pthread_mutex_lock(&highmutex_); // Lock
-        // Check for wraparound.
-        if (inpointer_+SPIBUFFERSIZE <= RINGBUFFERSIZE) {
-            // No wraparound, one step copy
-            memcpy(&RingBuffer_[inpointer_],SPIBuffer_,
-                   SPIBUFFERSIZE*sizeof(uint32_t));
-        } else {
-            // Wraparound case.  Split the copy into two parts:
-            // before 12 o'clock and after 12 o'clock.
-            uint32_t count = RINGBUFFERSIZE - inpointer_;
-            memcpy(&RingBuffer_[inpointer_],SPIBuffer_,
-                   count*sizeof(uint32_t));
-            uint32_t remainder = SPIBUFFERSIZE-count;
-            memcpy(RingBuffer_,SPIBuffer_+count,
-                   remainder*sizeof(uint32_t));
-        }
         // Update point index
         inpointer_ = (inpointer_+SPIBUFFERSIZE) % RINGBUFFERSIZE;
         pthread_mutex_unlock(&highmutex_); // unlock
         // Flag newdata
         newdata_ = true;
+        // Current buffer becomes the previous buffer
+        prev_rxptr = curr_rxptr; 
+        // Swap buffer offsets in the PRU
+        if (current_offset == SPIBUFFERSIZE) {
+            current_offset = 0;
+        } else {
+            current_offset = SPIBUFFERSIZE;
+        }
     }
 }
 

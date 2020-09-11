@@ -39,6 +39,11 @@ uint32_t spi_write_cmd(uint32_t *data, int byte_cnt);
 uint8_t spi_writeread_single(uint32_t *txdata, int txcnt, uint32_t *rxdata, int rxcnt);
 uint8_t spi_writeread_continuous(uint32_t *txdata, int txcnt, uint32_t *rxdata, int rxcnt, int ncnv);
 
+uint32_t  spi_writeread_continuous_start(uint32_t *txdata, int txcnt, uint32_t rxoffset, int rxcnt, int ncnv);
+uint32_t spi_writeread_continuous_waitstart(uint32_t *txdata, int txcnt, uint32_t rxoffset, int rxcnt, int ncnv);
+void spi_writeread_continuous_wait();
+uint8_t spi_writeread_continuous_transfer(uint32_t rxptr,int ncnv, uint32_t *rxdata);
+
 #ifdef __cplusplus
 }
 #endif
