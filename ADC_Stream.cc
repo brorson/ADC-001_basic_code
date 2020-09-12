@@ -8,7 +8,7 @@
 //  Author        : $Author$
 //  Created By    : Robert Heller
 //  Created       : Sat Sep 5 15:17:04 2020
-//  Last Modified : <200908.0956>
+//  Last Modified : <200911.1513>
 //
 //  Description	
 //
@@ -177,7 +177,7 @@ void * ADC_Stream::thread_()
     // Set up ADC mode reg for continuous conversation
     
     // Write mode register
-    //printf("WRITE_ADCMODE_REG\n");
+    printf("WRITE_ADCMODE_REG\n");
     tx_buf[0] = WRITE_ADCMODE_REG;
     tx_buf[1] = 0x00;
     tx_buf[2] = 0x0c;
@@ -188,16 +188,30 @@ void * ADC_Stream::thread_()
     // Initialize by filling the buffer at offset 0.
     prev_rxptr = spi_writeread_continuous_start(tx_buf, 1, 0, 3, 
                                                 SPIBUFFERSIZE);
+    fprintf(stderr,"*** ADC_Stream::thread_(): after spi_writeread_continuous_start - prev_rxptr is %d\n",prev_rxptr);
     // Then we will fill the buffer at SPIBUFFERSIZE offset
     current_offset = SPIBUFFERSIZE;
     // Loop until end
     while (!end_) {
+        fprintf(stderr,"*** ADC_Stream::thread_(): top of while loop: current_offset = %d\n",current_offset);
         // Wait for the previous buffer to fill, then start filling
         // the other buffer.
-        curr_rxptr = spi_writeread_continuous_waitstart(tx_buf, 1,
+        spi_writeread_continuous_wait();
+        
+        // Write mode register
+        printf("WRITE_ADCMODE_REG\n");
+        tx_buf[0] = WRITE_ADCMODE_REG;
+        tx_buf[1] = 0x00;
+        tx_buf[2] = 0x0c;
+        spi_write_cmd(tx_buf, 3);
+        
+        // Read samples from data register to buffer
+        tx_buf[0] = READ_DATA_REG;
+        curr_rxptr = spi_writeread_continuous_start(tx_buf, 1,
                                                         current_offset,
                                                         3, 
                                                         SPIBUFFERSIZE);
+        fprintf(stderr,"*** ADC_Stream::thread_(): after spi_writeread_continuous_wait - prev_rxptr = %d\n",prev_rxptr);
         // Copy the previous buffer to the ring.
         spi_writeread_continuous_transfer(prev_rxptr, SPIBUFFERSIZE,
                                           &RingBuffer_[inpointer_]);
