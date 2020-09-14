@@ -8,7 +8,7 @@
 //  Author        : $Author$
 //  Created By    : Robert Heller
 //  Created       : Fri Sep 11 13:08:51 2020
-//  Last Modified : <200911.1429>
+//  Last Modified : <200914.1224>
 //
 //  Description	
 //
@@ -116,6 +116,9 @@ private:
     timer_t timerid_;
 };
 
+static ADC_Stream adc_stream;
+static TimedStream timedStream;
+
 int main(int argc, char *argv[])
 {
     int seconds = 0;             // Seconds to collect for
@@ -123,8 +126,6 @@ int main(int argc, char *argv[])
     
     FILE *ofp;                   // File output stream
     
-    ADC_Stream adc_stream;
-    TimedStream timedStream;
     
     // Check for CLI args
     if (argc < 3) {

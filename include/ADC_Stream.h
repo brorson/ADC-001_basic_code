@@ -8,7 +8,7 @@
 //  Author        : $Author$
 //  Created By    : Robert Heller
 //  Created       : Sat Sep 5 14:26:26 2020
-//  Last Modified : <200906.1004>
+//  Last Modified : <200914.1222>
 //
 //  Description	
 //
@@ -49,7 +49,7 @@
 /** Buffer sizes.  These are the sizes of the buffers
  */
 
-#define SPIBUFFERSIZE 1024 // Low-level SPI buffer
+#define SPIBUFFERSIZE 512 // Low-level SPI buffer
 #define RINGBUFFERSIZE (8*SPIBUFFERSIZE) // High-level ring buffer
 
 
