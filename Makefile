@@ -7,12 +7,17 @@
 #----------------------------------------------------
 # ARM code
 CC := gcc
-CFLAGS := -O3 -mfpu=vfpv3 -mfloat-abi=hard -march=armv7 -I./include 
+CXX := g++
+CFLAGS := -O3 -mfpu=vfpv3 -mfloat-abi=hard -march=armv7 -I./include
+CXXFLAGS := -O3 -mfpu=vfpv3 -mfloat-abi=hard -march=armv7 -I./include
 # LDFLAGS := -lprussdrv
+LDFLAGS := -lrt -lpthread
 
-SRCS := main.c prussdrv.c adcdriver_host.c spidriver_host.c
+SRCS := main.c prussdrv.c adcdriver_host.c spidriver_host.c ADC_Stream.cc
 OBJS := main.o prussdrv.o adcdriver_host.o spidriver_host.o
-EXES := main
+OBJS1 = mainstream1.o prussdrv.o adcdriver_host.o spidriver_host.o ADC_Stream.o
+#OBJS2 = mainstream2.o prussdrv.o adcdriver_host.o spidriver_host.o ADC_Stream.o
+EXES := main mainstream1 # mainstream2
 INCLUDEDIR := ./include
 INCLUDES := $(addprefix $(INCLUDEDIR)/, prussdrv.h pru_types.h __prussdrv.h pruss_intc_mapping.h spidriver_host.h adcdriver_host.h)
 
@@ -39,34 +44,54 @@ PRU1_EXES := data1.bin text1.bin
 PRU_HEXPRU_SCRIPT := bin.cmd
 
 #=================================================
-all: main pru0.bin pru1.bin ADC_001-00A0.dtbo
+all: $(EXES) pru0.bin pru1.bin ADC_001-00A0.dtbo
 
-bins: main pru0.bin
+bins: $(EXES) pru0.bin
 
 #--------------------------------
 # Compile ARM sources for host.
-main.o: $(SRCS)
+main.o: main.c include/spidriver_host.h include/adcdriver_host.h
 	echo "--> Building main.o"
+	$(CC) $(CFLAGS) -E -MM  -c $< -MF $<.d
 	$(CC) $(CFLAGS) -c $< -o $@
+
+mainstream1.o: mainstream1.cc include/ADC_Stream.h \
+	include/spidriver_host.h include/adcdriver_host.h
+	echo "--> Building mainstream1.o"
+	$(CXX) $(CXXFLAGS) -E -MM  -c $< -MF $<.d
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+	
 
 adcdriver_host.o: adcdriver_host.c ./include/adcdriver_host.h
 	echo "--> Building adcdriver_host.o"
+	$(CC) $(CFLAGS) -E -MM  -c $< -MF $<.d
 	$(CC) $(CFLAGS) -c $< -o $@
 
 spidriver_host.o: spidriver_host.c ./include/spidriver_host.h
 	echo "--> Building spidriver_host.o"
+	$(CC) $(CFLAGS) -E -MM  -c $< -MF $<.d
 	$(CC) $(CFLAGS) -c $< -o $@
 
 prussdrv.o: prussdrv.c # $(DEPS)
 	echo "--> Building prussdrv.o"
+	$(CC) $(CFLAGS) -E -MM  -c $< -MF $<.d
 	$(CC) $(CFLAGS) -c $< -o $@
+
+ADC_Stream.o: ADC_Stream.cc # $(DEPS)
+	echo "--> Building ADC_Stream.o"
+	$(CXX) $(CXXFLAGS) -E -MM  -c $< -MF $<.d
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 # Link the ARM objects
 main: $(OBJS) 
-	echo "--> Linking ARM stuff...."
+	echo "--> Linking main ...."
 	$(CC) $(CFLAGS) $^ $(LIBLOCS) $(LDFLAGS) -o $@ 
 
 $(OBJS): $(INCLUDES)
+
+mainstream1: $(OBJS1)
+	echo "--> Linking mainstream1 ...."
+	$(CXX) $(CXXFLAGS) $^ $(LIBLOCS) $(LDFLAGS) -o $@
 
 #--------------------------------
 # Compile and link the PRU sources to create ELF executable

@@ -169,7 +169,7 @@ int main(void) {
       // Set up rx buffer
       rx_word_cnt = pMEM[memptr++];   // Number of bytes in one conversion value
       ncnv = pMEM[memptr++];          // Total number of conversions requested
-      rxmemptr = memptr;
+      rxmemptr = pMEM[memptr++];
       //for (i=0; i<ncnv; i++) { // Load rx buffer with zeros.  Can remove this.
       //  rx_words[i] = 0xff;  // pMEM[memptr++];
       //}

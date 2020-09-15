@@ -1,6 +1,10 @@
 #ifndef ADCDRIVER_HOST_H
 #define ADCDRIVER_HOST_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // Allowed sample rates.  These are set by the AD7172 hardware.
 // Consult the AD7172 datasheet for more info.  
 #define SAMP_RATE_31250 5
@@ -37,6 +41,10 @@ void adc_read_multiple(uint32_t read_cnt, float *volts);
 // Low level fcns
 void adc_write(uint32_t *tx_buf, int byte_cnt);
 void adc_writeread(uint32_t *tx_buf, int tx_cnt, uint32_t *rx_buf, int rx_cnt);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 
