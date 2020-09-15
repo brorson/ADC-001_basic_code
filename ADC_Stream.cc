@@ -8,7 +8,7 @@
 //  Author        : $Author$
 //  Created By    : Robert Heller
 //  Created       : Sat Sep 5 15:17:04 2020
-//  Last Modified : <200914.1235>
+//  Last Modified : <200915.1159>
 //
 //  Description	
 //
@@ -197,13 +197,6 @@ void * ADC_Stream::thread_()
         // Wait for the previous buffer to fill, then start filling
         // the other buffer.
         spi_writeread_continuous_wait();
-        
-        // Write mode register
-        //printf("WRITE_ADCMODE_REG\n");
-        tx_buf[0] = WRITE_ADCMODE_REG;
-        tx_buf[1] = 0x00;
-        tx_buf[2] = 0x0c;
-        spi_write_cmd(tx_buf, 3);
         
         // Read samples from data register to buffer
         tx_buf[0] = READ_DATA_REG;
