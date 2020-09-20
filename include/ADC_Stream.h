@@ -8,7 +8,7 @@
 //  Author        : $Author$
 //  Created By    : Robert Heller
 //  Created       : Sat Sep 5 14:26:26 2020
-//  Last Modified : <200915.1214>
+//  Last Modified : <200919.2137>
 //
 //  Description	
 //
@@ -46,10 +46,21 @@
 #include <stdint.h>
 #include <pthread.h>
 
-/** Buffer sizes.  These are the sizes of the buffers
+/** Buffer sizes.  These are the sizes of the buffers, in units of
+ * uint32_t (32-bit unsigned -- 4 bytes each).
  */
 
-#define SPIBUFFERSIZE 1020 // Low-level SPI buffer
+// SPIBUFFERSIZE can be no more than (((8192-128)-(6*sizeof(uint32_t))/sizeof(uint32_t))/2,
+// which is 1005.  This is because the PRU Dataram is 8192 bytes and
+// both buffers, plus the 6 command words need to fit in that memory.
+// (For some reason, the first 128 bytes of PRU Dataram is not 
+// available.)
+#define SPIBUFFERSIZE 875 // Low-level SPI buffer size
+// RINGBUFFERSIZE *MUST* be an exact integer multiple of 
+// SPIBUFFERSIZE, to avoid split buffer wraparound fun.  The larger 
+// the better, but remember the Beagles only have 512Meg of physical 
+// memory, and swapping should probably be avoided, since will slow
+// down the main thread, which might make it harder to keep up.
 #define RINGBUFFERSIZE (8*SPIBUFFERSIZE) // High-level ring buffer
 
 
@@ -163,8 +174,6 @@ private:
     bool end_;
     /** Thread object. */
     pthread_t threadHandle_;
-    /** New data flag */
-    bool newdata_;
 };
     
 
