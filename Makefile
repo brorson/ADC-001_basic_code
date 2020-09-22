@@ -8,8 +8,8 @@
 # ARM code
 CC := gcc
 CXX := g++
-CFLAGS := -O3 -mfpu=vfpv3 -mfloat-abi=hard -march=armv7 -I./include
-CXXFLAGS := -O3 -mfpu=vfpv3 -mfloat-abi=hard -march=armv7 -I./include
+CFLAGS := -g -O3 -mfpu=vfpv3 -mfloat-abi=hard -march=armv7 -I./include
+CXXFLAGS := -g -O3 -mfpu=vfpv3 -mfloat-abi=hard -march=armv7 -I./include
 # LDFLAGS := -lprussdrv
 LDFLAGS := -lrt -lpthread
 
@@ -19,7 +19,7 @@ OBJS1 = mainstream1.o prussdrv.o adcdriver_host.o spidriver_host.o ADC_Stream.o
 #OBJS2 = mainstream2.o prussdrv.o adcdriver_host.o spidriver_host.o ADC_Stream.o
 EXES := main mainstream1 # mainstream2
 INCLUDEDIR := ./include
-INCLUDES := $(addprefix $(INCLUDEDIR)/, prussdrv.h pru_types.h __prussdrv.h pruss_intc_mapping.h spidriver_host.h adcdriver_host.h)
+INCLUDES := $(addprefix $(INCLUDEDIR)/, prussdrv.h pru_types.h __prussdrv.h pruss_intc_mapping.h spidriver_host.h adcdriver_host.h ADC_Stream.h)
 
 #----------------------------------------------------
 # PRU code
@@ -77,7 +77,8 @@ prussdrv.o: prussdrv.c # $(DEPS)
 	$(CC) $(CFLAGS) -E -MM  -c $< -MF $<.d
 	$(CC) $(CFLAGS) -c $< -o $@
 
-ADC_Stream.o: ADC_Stream.cc # $(DEPS)
+ADC_Stream.o: ADC_Stream.cc ./include/ADC_Stream.h \
+		./include/adcdriver_host.h ./include/spidriver_host.h 
 	echo "--> Building ADC_Stream.o"
 	$(CXX) $(CXXFLAGS) -E -MM  -c $< -MF $<.d
 	$(CXX) $(CXXFLAGS) -c $< -o $@

@@ -8,7 +8,7 @@
 //  Author        : $Author$
 //  Created By    : Robert Heller
 //  Created       : Sat Sep 5 15:17:04 2020
-//  Last Modified : <200915.1159>
+//  Last Modified : <200919.2141>
 //
 //  Description	
 //
@@ -82,7 +82,6 @@ void ADC_Stream::Start(Callback_t callback, void *usercontext)
     callback_ = callback;          // Save Callback function
     usercontext_ = usercontext;    // Save User Context
     end_ = false;                  // Not the end
-    newdata_ = false;              // New Data flag (no new data yet).
     
     inpointer_ = 0;                // Reset Ring Buffer pointer indexes
     outpointer_ = 0;
@@ -98,17 +97,22 @@ void ADC_Stream::Start(Callback_t callback, void *usercontext)
     }
     // Loop until end.
     while (!end_) {
-        usleep(100000);             // sleep 100 ms.
-        if (newdata_) {             // new data check
-            newdata_ = false;       // reset flag
-            // Compute how much data is available
-            uint32_t dataavailable = inpointer_ - outpointer_;
-            // Wrap around
-            if (dataavailable < 0) {
-                dataavailable = RINGBUFFERSIZE - dataavailable;
-            }
+        // Compute how much data is available
+        pthread_mutex_lock(&highmutex_);
+        int32_t dataavailable = inpointer_ - outpointer_;
+        pthread_mutex_unlock(&highmutex_);
+        //fprintf(stderr,"*** ADC_Stream::Start(): *before Wrap around*: dataavailable is %d\n",dataavailable);
+        // Wrap around
+        if (dataavailable < 0) {
+            dataavailable = RINGBUFFERSIZE + dataavailable;
+        }
+        //fprintf(stderr,"*** ADC_Stream::Start(): dataavailable is %d\n",dataavailable);
+        if (dataavailable > 0) {             // new data check
+            //fprintf(stderr,"*** ADC_Stream::Start(): dataavailable is %d\n",dataavailable);
             // Call Callback function
-            (*callback_)(this,dataavailable,usercontext_);
+            (*callback_)(this,(uint32_t)dataavailable,usercontext_);
+        } else {
+            usleep(1000);
         }
     }
 }
@@ -116,10 +120,9 @@ void ADC_Stream::Start(Callback_t callback, void *usercontext)
 /** Stop function implementation */
 void ADC_Stream::Stop(void)
 {
-    void *result = NULL; // holds result (not used)
     end_ = true;         // Set end flag
     
-    pthread_join(threadHandle_,&result); // Wait for thread to stop
+    pthread_join(threadHandle_,NULL); // Wait for thread to stop
 }
 
 /** Get data function implementation */
@@ -128,7 +131,9 @@ uint32_t ADC_Stream::GetData(uint32_t offset, uint32_t count,
 {
     int i;
     // Compute data available
+    pthread_mutex_lock(&highmutex_);
     uint32_t dataavailable = inpointer_ - outpointer_;
+    pthread_mutex_unlock(&highmutex_);
     // Wraparound
     if (dataavailable < 0) {
         dataavailable = RINGBUFFERSIZE - dataavailable;
@@ -188,7 +193,7 @@ void * ADC_Stream::thread_()
     // Initialize by filling the buffer at offset 0.
     prev_rxptr = spi_writeread_continuous_start(tx_buf, 1, 0, 3, 
                                                 SPIBUFFERSIZE);
-    //fprintf(stderr,"*** ADC_Stream::thread_(): after spi_writeread_continuous_start - prev_rxptr is %d\n",prev_rxptr);
+    //fprintf(stderr,"*** ADC_Stream::thread_(): after spi_writeread_continuous_start - prev_rxptr is %d, buffer end is %d\n",prev_rxptr,((prev_rxptr+SPIBUFFERSIZE)*sizeof(uint32_t)));
     // Then we will fill the buffer at SPIBUFFERSIZE offset
     current_offset = SPIBUFFERSIZE;
     // Loop until end
@@ -204,16 +209,38 @@ void * ADC_Stream::thread_()
                                                         current_offset,
                                                         3, 
                                                         SPIBUFFERSIZE);
-        //fprintf(stderr,"*** ADC_Stream::thread_(): after spi_writeread_continuous_wait - prev_rxptr = %d\n",prev_rxptr);
+        //fprintf(stderr,"*** ADC_Stream::thread_(): after spi_writeread_continuous_wait - curr_rxptr = %d, buffer end is %d\n",curr_rxptr,((curr_rxptr+SPIBUFFERSIZE)*sizeof(uint32_t)));
+        //fprintf(stderr,"*** ADC_Stream::thread_(): inpointer_ = %d, outpointer_ = %d\n",inpointer_,outpointer_);
+        pthread_mutex_lock(&highmutex_); // Lock
+        // Check for available buffer space (avoid buffer overruns)
+        int32_t bufferavailable = outpointer_ - inpointer_;
+        if (bufferavailable <= 0) {
+            bufferavailable = RINGBUFFERSIZE + bufferavailable;
+        }
+        // If not enough buffer space, wait for buffer space to become
+        // available
+        while (bufferavailable < SPIBUFFERSIZE) {
+            pthread_mutex_unlock(&highmutex_); // unlock
+            //fprintf(stderr,"*** ADC_Stream::thread_(): buffer overrun: inpointer_ = %d, outpointer_ = %d, bufferavailable = %d\n",inpointer_,outpointer_,bufferavailable);
+            usleep(1000); // give up cycles to consumer thread(s)
+            pthread_mutex_lock(&highmutex_); // Lock 
+            // recompute buffer space.
+            bufferavailable = outpointer_ - inpointer_;
+            if (bufferavailable <= 0) {
+                bufferavailable = RINGBUFFERSIZE + bufferavailable;
+            }
+            //fprintf(stderr,"*** ADC_Stream::thread_(): buffer overrun2: inpointer_ = %d, outpointer_ = %d, bufferavailable = %d\n",inpointer_,outpointer_,bufferavailable);
+        }
         // Copy the previous buffer to the ring.
+        // NOTE: assumes that RINGBUFFERSIZE is an exact integer 
+        // multiple of SPIBUFFERSIZE -- this means that inpointer_
+        // will always wrap around at exactly midnight (12 O'clock)
+        // and will never wraparound in the middle of a buffer.
         spi_writeread_continuous_transfer(prev_rxptr, SPIBUFFERSIZE,
                                           &RingBuffer_[inpointer_]);
-        pthread_mutex_lock(&highmutex_); // Lock
-        // Update point index
-        inpointer_ = (inpointer_+SPIBUFFERSIZE) % RINGBUFFERSIZE;
+        // Update pointer index
+        inpointer_ = (inpointer_ + SPIBUFFERSIZE) % RINGBUFFERSIZE;
         pthread_mutex_unlock(&highmutex_); // unlock
-        // Flag newdata
-        newdata_ = true;
         // Current buffer becomes the previous buffer
         prev_rxptr = curr_rxptr; 
         // Swap buffer offsets in the PRU

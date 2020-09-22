@@ -8,7 +8,7 @@
 //  Author        : $Author$
 //  Created By    : Robert Heller
 //  Created       : Fri Sep 11 13:08:51 2020
-//  Last Modified : <200914.1224>
+//  Last Modified : <200919.2146>
 //
 //  Description	
 //
@@ -94,11 +94,11 @@ private:
     }
     void callback_(ADC_Stream *stream,uint32_t available)
     {
-        float buffer[1024];
+        static float buffer[2048];
         uint32_t count, index;
         struct itimerspec current;
         
-        while ((count = stream->GetData(0,1024,buffer,true)) > 0) {
+        while ((count = stream->GetData(0,2048,buffer,true)) > 0) {
             for (index = 0; index < count; index++) {
                 fprintf(ofp_,"%10.5g\n",buffer[index]);
             }
@@ -106,6 +106,7 @@ private:
                 perror("timer_gettime");
                 exit(EXIT_FAILURE);
             }
+            //fprintf(stderr,"*** TimedStream::callback_(): current time is %u / %u\n",current.it_value.tv_sec,current.it_value.tv_nsec);
             if (current.it_value.tv_sec == 0 &&
                 current.it_value.tv_nsec == 0) {
                 stream->Stop();
