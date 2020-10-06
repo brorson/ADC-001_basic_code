@@ -16,8 +16,8 @@ LDFLAGS := -lrt -lpthread
 SRCS := main.c prussdrv.c adcdriver_host.c spidriver_host.c ADC_Stream.cc
 OBJS := main.o prussdrv.o adcdriver_host.o spidriver_host.o
 OBJS1 = mainstream1.o prussdrv.o adcdriver_host.o spidriver_host.o ADC_Stream.o
-#OBJS2 = mainstream2.o prussdrv.o adcdriver_host.o spidriver_host.o ADC_Stream.o
-EXES := main mainstream1 # mainstream2
+OBJS2 = mainstream2.o prussdrv.o adcdriver_host.o spidriver_host.o ADC_Stream.o
+EXES := main mainstream1 mainstream2
 INCLUDEDIR := ./include
 INCLUDES := $(addprefix $(INCLUDEDIR)/, prussdrv.h pru_types.h __prussdrv.h pruss_intc_mapping.h spidriver_host.h adcdriver_host.h ADC_Stream.h)
 
@@ -61,6 +61,12 @@ mainstream1.o: mainstream1.cc include/ADC_Stream.h \
 	$(CXX) $(CXXFLAGS) -E -MM  -c $< -MF $<.d
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 	
+mainstream2.o: mainstream2.cc include/ADC_Stream.h \
+	include/spidriver_host.h include/adcdriver_host.h
+	echo "--> Building mainstream2.o"
+	$(CXX) $(CXXFLAGS) -E -MM  -c $< -MF $<.d
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+	
 
 adcdriver_host.o: adcdriver_host.c ./include/adcdriver_host.h
 	echo "--> Building adcdriver_host.o"
@@ -92,6 +98,10 @@ $(OBJS): $(INCLUDES)
 
 mainstream1: $(OBJS1)
 	echo "--> Linking mainstream1 ...."
+	$(CXX) $(CXXFLAGS) $^ $(LIBLOCS) $(LDFLAGS) -o $@
+
+mainstream2: $(OBJS2)
+	echo "--> Linking mainstream2 ...."
 	$(CXX) $(CXXFLAGS) $^ $(LIBLOCS) $(LDFLAGS) -o $@
 
 #--------------------------------
