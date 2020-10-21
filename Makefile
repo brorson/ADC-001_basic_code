@@ -8,10 +8,12 @@
 # ARM code
 CC := gcc
 CXX := g++
-CFLAGS := -g -O3 -mfpu=vfpv3 -mfloat-abi=hard -march=armv7 -I./include
-CXXFLAGS := -g -O3 -mfpu=vfpv3 -mfloat-abi=hard -march=armv7 -I./include
+XENOCFLAGS = `/usr/xenomai/bin/xeno-config --cobalt --cflags`
+CFLAGS := $(XENOCFLAGS) -O3 -mfpu=vfpv3 -mfloat-abi=hard -march=armv7 -I./include
+CXXFLAGS := $(XENOCFLAGS) -O3 -mfpu=vfpv3 -mfloat-abi=hard -march=armv7 -I./include
 # LDFLAGS := -lprussdrv
-LDFLAGS := -lrt -lpthread
+#LDFLAGS := -lrt -lpthread
+LDFLAGS := `/usr/xenomai/bin/xeno-config --cobalt --ldflags`
 
 SRCS := main.c prussdrv.c adcdriver_host.c spidriver_host.c ADC_Stream.cc
 OBJS := main.o prussdrv.o adcdriver_host.o spidriver_host.o

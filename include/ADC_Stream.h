@@ -8,7 +8,7 @@
 //  Author        : $Author$
 //  Created By    : Robert Heller
 //  Created       : Sat Sep 5 14:26:26 2020
-//  Last Modified : <200919.2137>
+//  Last Modified : <201021.1300>
 //
 //  Description	
 //
@@ -55,7 +55,7 @@
 // both buffers, plus the 6 command words need to fit in that memory.
 // (For some reason, the first 128 bytes of PRU Dataram is not 
 // available.)
-#define SPIBUFFERSIZE 875 // Low-level SPI buffer size
+#define SPIBUFFERSIZE 900 // Low-level SPI buffer size
 // RINGBUFFERSIZE *MUST* be an exact integer multiple of 
 // SPIBUFFERSIZE, to avoid split buffer wraparound fun.  The larger 
 // the better, but remember the Beagles only have 512Meg of physical 
