@@ -8,7 +8,7 @@
 //  Author        : $Author$
 //  Created By    : Robert Heller
 //  Created       : Sat Sep 5 15:17:04 2020
-//  Last Modified : <200919.2141>
+//  Last Modified : <201031.1308>
 //
 //  Description	
 //
@@ -78,6 +78,8 @@ static const char rcsid[] = "@(#) : $Id$";
  */
 void ADC_Stream::Start(Callback_t callback, void *usercontext)
 {
+    struct sched_param param = {.sched_priority = 71 };
+    pthread_attr_t attr;
     // Initialize instance variables:
     callback_ = callback;          // Save Callback function
     usercontext_ = usercontext;    // Save User Context
@@ -86,7 +88,12 @@ void ADC_Stream::Start(Callback_t callback, void *usercontext)
     inpointer_ = 0;                // Reset Ring Buffer pointer indexes
     outpointer_ = 0;
     // Create thread to read data
-    int result = pthread_create(&threadHandle_,NULL,
+    pthread_attr_init(&attr);
+    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+    pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED);
+    pthread_attr_setschedpolicy(&attr, SCHED_FIFO);
+    pthread_attr_setschedparam(&attr, &param);
+    int result = pthread_create(&threadHandle_,&attr,
                                 ADC_Stream::thread__,
                                 (void *)this);
     // Error check

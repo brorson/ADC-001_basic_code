@@ -8,7 +8,7 @@
 //  Author        : $Author$
 //  Created By    : Robert Heller
 //  Created       : Fri Sep 11 13:08:51 2020
-//  Last Modified : <200919.2146>
+//  Last Modified : <201031.1311>
 //
 //  Description	
 //
@@ -110,6 +110,7 @@ private:
             if (current.it_value.tv_sec == 0 &&
                 current.it_value.tv_nsec == 0) {
                 stream->Stop();
+                break;
             }
         }
     }
